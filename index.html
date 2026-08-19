@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚽ 足球人生模擬器 4.1 | 傳奇之路</title>
+    <title>⚽ 足球人生模擬器 5.0 | 線上排名天梯版</title>
+    
+    <!-- 引入 Firebase SDK (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -38,7 +43,6 @@
             gap: 15px;
         }
 
-        /* 登入/註冊彈窗介面 */
         .auth-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -78,23 +82,11 @@
             border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 18px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
             position: relative;
         }
 
         h1 { margin: 0; font-size: 24px; color: var(--accent-cyan); }
         .author-tag { font-size: 13px; color: var(--accent-gold); font-weight: bold; margin-top: 4px; }
-
-        .time-badge {
-            display: inline-block;
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 13px;
-            margin-top: 8px;
-        }
 
         .tab-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
 
@@ -153,8 +145,21 @@
         .btn-purple { background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; }
         .btn-rose { background: linear-gradient(135deg, #f43f5e, #be123c); color: #fff; }
 
+        /* 天梯排名表樣式 */
+        table.rank-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table.rank-table th, table.rank-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+        table.rank-table th { color: var(--accent-cyan); background: #0b0f19; }
+
         #log-box {
-            height: 250px;
+            height: 200px;
             overflow-y: auto;
             background-color: #0b0f19;
             border: 1px solid var(--card-border);
@@ -169,58 +174,50 @@
         .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 6px; font-weight: bold; }
         .bg-blue { background-color: #0284c7; }
         .bg-gold { background-color: #d97706; color: black; }
-        .bg-red { background-color: #dc2626; }
-        .bg-green { background-color: #16a34a; }
         .bg-purple { background-color: #9333ea; }
     </style>
 </head>
 <body>
 
-<!-- 帳號註冊/登入彈窗 -->
+<!-- 帳號登入/註冊門禁 -->
 <div id="auth-modal" class="auth-overlay">
     <div class="auth-card">
         <h2>⚽ 球員登入 / 註冊</h2>
-        <p style="color:var(--text-sub); font-size:13px;">輸入帳密以登入或建立新紀錄</p>
-        <input type="text" id="auth-username" class="auth-input" placeholder="帳號名稱 (Username)">
-        <input type="password" id="auth-password" class="auth-input" placeholder="密碼 (Password)">
+        <p style="color:var(--text-sub); font-size:13px;">輸入帳密以連線全服資料庫</p>
+        <input type="text" id="auth-username" class="auth-input" placeholder="帳號名稱">
+        <input type="password" id="auth-password" class="auth-input" placeholder="密碼">
         
         <div style="margin-top: 15px; display:flex; gap:10px;">
             <button class="action-btn btn-gold" style="flex:1;" onclick="login()">登入遊戲</button>
-            <button class="action-btn btn-purple" style="flex:1;" onclick="register()">註冊新帳號</button>
+            <button class="action-btn btn-purple" style="flex:1;" onclick="register()">註冊角色</button>
         </div>
     </div>
 </div>
 
 <div class="container">
     <div class="header-card">
-        <h1>⚽ 足球人生模擬器 4.1</h1>
-        <div class="author-tag">🎮 玩家：<span id="hdr-account" style="color:#fff;">未登入</span> | 製作：FIiex (孫振賀)</div>
-        <div class="time-badge">
-            第 <span id="hdr-year">1</span> 年 | 第 <span id="hdr-week">1</span> 週 | 階段：<span id="hdr-phase" style="color:var(--accent-gold);">季前賽</span>
-        </div>
+        <h1>⚽ 足球人生模擬器 5.0 (線上天梯對戰版)</h1>
+        <div class="author-tag">🎮 玩家：<span id="hdr-account" style="color:#fff;">未登入</span> | 製作：FIiex (孫振鶴)</div>
         <button onclick="logout()" style="position:absolute; right:15px; top:15px; background:var(--accent-rose); border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer;">登出</button>
     </div>
 
-    <!-- 導覽分頁按鈕 -->
+    <!-- 分頁選單 -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-profile')">👤 球員個人</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-train')">🏋️ 訓練與復健</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-match')">⚽ 賽事大廳</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-social')">📱 社群與商業</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-awards')">🏆 榮譽與退役</button>
-        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 生涯日誌</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'tab-profile')">👤 球員狀態</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-train')">🏋️ 訓練養成</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-pvp')">⚔️ 全服天梯排名賽</button>
+        <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 對戰日誌</button>
     </div>
 
-    <!-- 分頁 1：球員個人 -->
+    <!-- 分頁 1：球員個人屬性 -->
     <div id="tab-profile" class="tab-content active">
         <div class="grid-2">
             <div>
                 <h2 id="p-name" style="margin:0; color:var(--accent-cyan);">球員名稱</h2>
                 <p style="font-size: 14px; color:var(--text-sub); line-height: 1.8;">
                     國籍：<span id="p-nation">台灣</span> | 年齡：<span id="p-age">16</span> 歲<br>
-                    場上位置：<span id="p-pos" style="color:var(--accent-cyan); font-weight:bold;">前鋒 (FW)</span><br>
-                    效力球隊：<span id="p-club" style="color:var(--accent-gold); font-weight:bold;">地區青訓隊</span><br>
-                    國家隊：<span id="p-national" style="color:var(--accent-rose); font-weight:bold;">未徵召</span>
+                    位置：<span id="p-pos" style="color:var(--accent-cyan); font-weight:bold;">前鋒 (FW)</span><br>
+                    天梯段位：<span id="p-rank-tier" style="color:var(--accent-gold); font-weight:bold;">新星青銅</span>
                 </p>
                 <div class="stat-group">
                     <div class="stat-label"><span>體力 (Energy)</span><span id="val-stamina">100/100</span></div>
@@ -228,128 +225,119 @@
                 </div>
             </div>
             <div>
-                <p>💰 週薪：$<span id="p-wage">100</span> | 贊助：$<span id="p-sponsor-wage" style="color:var(--accent-gold);">0</span></p>
-                <p>💳 總存款：$<span id="p-money" style="color:var(--accent-green); font-weight:bold;">200</span></p>
-                <p>📱 粉絲數：<span id="p-fans" style="color:var(--accent-purple); font-weight:bold;">1,000</span> 人</p>
-                <p>⚽ 總進球：<span id="p-goals" style="color:var(--accent-gold); font-weight:bold;">0</span> 顆</p>
-                <p>📊 綜合戰力 (OVR)：<span id="p-ovr" style="font-weight:bold; font-size:20px; color:var(--accent-cyan);">50</span></p>
+                <p>🏆 天梯積分 (ELO)：<span id="p-elo" style="color:var(--accent-gold); font-weight:bold; font-size:22px;">1000</span></p>
+                <p>⚔️ 對戰戰績：<span id="p-win">0</span> 勝 <span id="p-loss">0</span> 敗</p>
+                <p>📊 綜合戰力 (OVR)：<span id="p-ovr" style="font-weight:bold; font-size:22px; color:var(--accent-cyan);">50</span></p>
             </div>
         </div>
         <hr style="border-color:var(--card-border); margin: 15px 0;">
-        <h3>能力屬性細項</h3>
+        <h3>戰力屬性</h3>
         <div class="grid-2">
             <div class="stat-group"><div class="stat-label"><span>🎯 射門</span><span id="s-shoot">50</span></div><div class="progress-bar"><div id="b-shoot" class="progress-fill" style="width:50%;"></div></div></div>
             <div class="stat-group"><div class="stat-label"><span>👟 傳球</span><span id="s-pass">50</span></div><div class="progress-bar"><div id="b-pass" class="progress-fill" style="width:50%;"></div></div></div>
             <div class="stat-group"><div class="stat-label"><span>⚡ 盤帶</span><span id="s-dribble">50</span></div><div class="progress-bar"><div id="b-dribble" class="progress-fill" style="width:50%;"></div></div></div>
-            <div class="stat-group"><div class="stat-label"><span>🗣️ 頭頂</span><span id="s-header">50</span></div><div class="progress-bar"><div id="b-header" class="progress-fill" style="width:50%;"></div></div></div>
-            <div class="stat-group"><div class="stat-label"><span>🎨 控球</span><span id="s-control">50</span></div><div class="progress-bar"><div id="b-control" class="progress-fill" style="width:50%;"></div></div></div>
             <div class="stat-group"><div class="stat-label"><span>💪 體能</span><span id="s-physical">50</span></div><div class="progress-bar"><div id="b-physical" class="progress-fill" style="width:50%;"></div></div></div>
         </div>
     </div>
 
-    <!-- 分頁 2：訓練與復健 -->
+    <!-- 分頁 2：訓練養成 -->
     <div id="tab-train" class="tab-content">
-        <h3>自主專項訓練 (-20 體力)</h3>
+        <h3>自主訓練 (-20 體力)</h3>
         <div class="btn-grid">
             <button class="action-btn" onclick="train('shooting')">🎯 射門訓練</button>
             <button class="action-btn" onclick="train('passing')">👟 傳球訓練</button>
             <button class="action-btn" onclick="train('dribbling')">⚡ 盤帶訓練</button>
-            <button class="action-btn" onclick="train('heading')">🗣️ 頭頂訓練</button>
-            <button class="action-btn" onclick="train('ballControl')">🎨 控球訓練</button>
             <button class="action-btn" onclick="train('physical')">💪 體能訓練</button>
         </div>
         <hr style="border-color:var(--card-border); margin: 20px 0;">
-        <div class="btn-grid">
-            <button class="action-btn" style="background-color:var(--accent-green); color:#000;" onclick="rest()">🛌 休養恢復 (+50體)</button>
-        </div>
+        <button class="action-btn" style="background-color:var(--accent-green); color:#000; width:100%;" onclick="rest()">🛌 休養恢復 (+50體力)</button>
     </div>
 
-    <!-- 分頁 3：賽事大廳 -->
-    <div id="tab-match" class="tab-content">
-        <h3>當前日程事件與賽事</h3>
-        <p id="schedule-desc" style="font-size:15px; color:var(--accent-gold);">目前為季前準備期！</p>
-        <div class="btn-grid">
-            <button class="action-btn btn-gold" onclick="playMatch()">⚽ 參加週末聯賽 (-30體)</button>
-            <button class="action-btn btn-purple" onclick="nextWeek()">⏭️ 推進至下一週</button>
-        </div>
+    <!-- 分頁 3：全服天梯排名賽 -->
+    <div id="tab-pvp" class="tab-content">
+        <h3>⚔️ 天梯尋找對手 (-30 體力)</h3>
+        <p style="color:var(--text-sub); font-size:13px;">點擊「自動匹配對手」挑戰線上記錄的真實玩家！獲勝可提升天梯積分 (ELO)。</p>
+        <button class="action-btn btn-gold" style="width:100%; font-size:16px;" onclick="findAndPlayMatch()">🔍 尋找對手並進行對戰</button>
+
+        <hr style="border-color:var(--card-border); margin: 20px 0;">
+
+        <h3>🏆 全服英雄榜 (Top Players)</h3>
+        <button class="action-btn btn-purple" style="padding:6px 12px; font-size:12px;" onclick="loadLeaderboard()">🔄 刷新排行榜</button>
+        <table class="rank-table">
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th>球員</th>
+                    <th>國籍</th>
+                    <th>OVR</th>
+                    <th>天梯積分</th>
+                    <th>勝率</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <tr><td colspan="6" style="text-align:center;">載入中...</td></tr>
+            </tbody>
+        </table>
     </div>
 
-    <!-- 分頁 4：社群與商業 -->
-    <div id="tab-social" class="tab-content">
-        <h3>📱 社群經營</h3>
-        <div class="btn-grid">
-            <button class="action-btn btn-purple" onclick="postSocial()">📸 發布日常動態 (+粉絲)</button>
-        </div>
-    </div>
-
-    <!-- 分頁 5：榮譽與退役 -->
-    <div id="tab-awards" class="tab-content">
-        <h3>🏆 榮譽陳列室</h3>
-        <div id="trophy-list"><p style="color:var(--text-sub);">尚未獲得榮譽。</p></div>
-    </div>
-
-    <!-- 分頁 6：生涯日誌 -->
+    <!-- 分頁 4：對戰日誌 -->
     <div id="tab-log" class="tab-content">
-        <h3>📜 職業生涯紀錄</h3>
+        <h3>📜 歷史紀錄</h3>
         <div id="log-box"></div>
     </div>
 </div>
 
 <script>
+// 本地數據暫存結構
 let currentUser = null;
 let player = null;
 
-// 預設新球員結構
-function createNewPlayer(name, nation, pos) {
+function createNewPlayer(name, nation) {
     return {
         name: name || "孫振賀",
         nation: nation || "台灣",
-        pos: pos || "FW",
-        age: 16, year: 1, week: 1, phase: "季前賽",
+        age: 18,
         stamina: 100, maxStamina: 100,
-        shooting: 50, passing: 50, dribbling: 50, heading: 50, ballControl: 50, physical: 50,
-        club: "地區青訓隊", wage: 100, sponsorWage: 0, money: 200, fans: 1000, goals: 0,
-        nationalTeam: "無", nationalCaps: 0, nationalGoals: 0,
-        trophies: [], logs: []
+        shooting: 50, passing: 50, dribbling: 50, physical: 50,
+        elo: 1000, wins: 0, losses: 0,
+        logs: []
     };
 }
 
-// 註冊邏輯
+// 預設模擬對手庫 (萬一尚未連線到雲端資料庫時備用)
+let mockPlayers = [
+    { name: "C.羅納度", nation: "葡萄牙", shooting: 92, passing: 80, dribbling: 85, physical: 88, elo: 1500, wins: 50, losses: 10 },
+    { name: "L.梅西", nation: "阿根廷", shooting: 94, passing: 91, dribbling: 95, physical: 75, elo: 1520, wins: 52, losses: 8 },
+    { name: "K.姆巴佩", nation: "法國", shooting: 89, passing: 82, dribbling: 93, physical: 86, elo: 1450, wins: 40, losses: 12 },
+    { name: "E.哈蘭德", nation: "挪威", shooting: 93, passing: 75, dribbling: 80, physical: 92, elo: 1430, wins: 38, losses: 15 }
+];
+
 function register() {
     let u = document.getElementById('auth-username').value.trim();
     let p = document.getElementById('auth-password').value.trim();
     if (!u || !p) { alert("請輸入帳號與密碼！"); return; }
 
-    let users = JSON.parse(localStorage.getItem('fb_users') || '{}');
-    if (users[u]) { alert("該帳號已存在！請直接登入。"); return; }
+    let users = JSON.parse(localStorage.getItem('fb_pvp_users') || '{}');
+    if (users[u]) { alert("帳號已存在！"); return; }
 
     let pName = prompt("請輸入球員姓名：", "孫振賀");
     let pNation = prompt("請輸入國籍：", "台灣");
-    let pPos = prompt("請選擇位置 (1:前鋒FW, 2:中場MF, 3:後衛DF)：", "1");
-    let posStr = pPos === "2" ? "MF" : (pPos === "3" ? "DF" : "FW");
 
-    users[u] = {
-        password: p,
-        saveData: createNewPlayer(pName, pNation, posStr)
-    };
-
-    localStorage.setItem('fb_users', JSON.stringify(users));
-    alert("註冊成功！已為你建立帳號與存檔。");
+    users[u] = { password: p, saveData: createNewPlayer(pName, pNation) };
+    localStorage.setItem('fb_pvp_users', JSON.stringify(users));
+    alert("註冊成功！");
     loginUser(u, users[u].saveData);
 }
 
-// 登入邏輯
 function login() {
     let u = document.getElementById('auth-username').value.trim();
     let p = document.getElementById('auth-password').value.trim();
-    let users = JSON.parse(localStorage.getItem('fb_users') || '{}');
+    let users = JSON.parse(localStorage.getItem('fb_pvp_users') || '{}');
 
     if (!users[u] || users[u].password !== p) {
         alert("帳號或密碼錯誤！");
         return;
     }
-
-    alert("登入成功！已載入進度。");
     loginUser(u, users[u].saveData);
 }
 
@@ -358,74 +346,71 @@ function loginUser(username, saveData) {
     player = saveData;
     document.getElementById('hdr-account').textContent = currentUser;
     document.getElementById('auth-modal').style.display = 'none';
-    log("成功登入系統，自動存檔已啟用！", "系統");
+    log("成功登入系統，已進入天梯模擬伺服器！", "系統");
     updateUI();
+    loadLeaderboard();
 }
 
 function logout() {
     saveGame();
-    currentUser = null;
-    player = null;
+    currentUser = null; player = null;
     document.getElementById('auth-modal').style.display = 'flex';
-    document.getElementById('auth-username').value = '';
-    document.getElementById('auth-password').value = '';
 }
 
-// 自動存檔到 LocalStorage
 function saveGame() {
     if (!currentUser || !player) return;
-    let users = JSON.parse(localStorage.getItem('fb_users') || '{}');
+    let users = JSON.parse(localStorage.getItem('fb_pvp_users') || '{}');
     if (users[currentUser]) {
         users[currentUser].saveData = player;
-        localStorage.setItem('fb_users', JSON.stringify(users));
+        localStorage.setItem('fb_pvp_users', JSON.stringify(users));
     }
 }
 
 function log(msg, type = "消息") {
     if (!player) return;
-    player.logs.unshift({ year: player.year, week: player.week, msg, type });
+    player.logs.unshift({ msg, type, time: new Date().toLocaleTimeString() });
     renderLogs();
 }
 
 function renderLogs() {
     const logBox = document.getElementById('log-box');
     logBox.innerHTML = '';
-    player.logs.slice(0, 30).forEach(l => {
+    player.logs.slice(0, 20).forEach(l => {
         const div = document.createElement('div');
         div.className = 'log-entry';
-        div.innerHTML = `<span class="badge bg-blue">${l.type}</span>第 ${l.year} 年 W${l.week}：${l.msg}`;
+        div.innerHTML = `<span class="badge bg-purple">${l.type}</span>[${l.time}] ${l.msg}`;
         logBox.appendChild(div);
     });
 }
 
-function getOVR() {
-    return Math.floor((player.shooting + player.passing + player.dribbling + player.heading + player.ballControl + player.physical) / 6);
+function getOVR(p = player) {
+    return Math.floor((p.shooting + p.passing + p.dribbling + p.physical) / 4);
+}
+
+function getRankTier(elo) {
+    if (elo >= 1600) return "👑 傳奇王者";
+    if (elo >= 1400) return "💎 大師鑽石";
+    if (elo >= 1200) return "🥇 璀璨黃金";
+    if (elo >= 1000) return "🥈 競技白銀";
+    return "🥉 新星青銅";
 }
 
 function updateUI() {
     if (!player) return;
-    document.getElementById('hdr-year').textContent = player.year;
-    document.getElementById('hdr-week').textContent = player.week;
-    document.getElementById('hdr-phase').textContent = player.phase;
-
     document.getElementById('p-name').textContent = `⚽ ${player.name}`;
     document.getElementById('p-nation').textContent = player.nation;
     document.getElementById('p-age').textContent = player.age;
-    document.getElementById('p-pos').textContent = player.pos;
-    document.getElementById('p-club').textContent = player.club;
-    document.getElementById('p-national').textContent = player.nationalTeam;
-    document.getElementById('p-wage').textContent = player.wage;
-    document.getElementById('p-sponsor-wage').textContent = player.sponsorWage;
-    document.getElementById('p-money').textContent = player.money.toLocaleString();
-    document.getElementById('p-fans').textContent = player.fans.toLocaleString();
-    document.getElementById('p-goals').textContent = player.goals;
+    document.getElementById('p-rank-tier').textContent = getRankTier(player.elo);
+    document.getElementById('p-elo').textContent = player.elo;
+    document.getElementById('p-win').textContent = player.wins;
+    document.getElementById('p-loss').textContent = player.losses;
     document.getElementById('p-ovr').textContent = getOVR();
 
     document.getElementById('val-stamina').textContent = `${player.stamina}/${player.maxStamina}`;
     document.getElementById('bar-stamina').style.width = `${(player.stamina/player.maxStamina)*100}%`;
 
-    const stats = ['shooting', 'passing', 'dribbling', 'heading', 'ballControl', 'physical'];
-    const ids = ['shoot', 'pass', 'dribble', 'header', 'control', 'physical'];
+    const stats = ['shooting', 'passing', 'dribbling', 'physical'];
+    const ids = ['shoot', 'pass', 'dribble', 'physical'];
     stats.forEach((st, idx) => {
         document.getElementById(`s-${ids[idx]}`).textContent = player[st];
         document.getElementById(`b-${ids[idx]}`).style.width = `${player[st]}%`;
@@ -441,50 +426,93 @@ function switchTab(evt, tabId) {
     document.getElementById(tabId).classList.add('active');
 }
 
-// 遊戲操作 (均包含自動存檔 saveGame)
 function train(type) {
     if (player.stamina < 20) { alert("體力不足！"); return; }
     player.stamina -= 20;
     player[type] = Math.min(99, player[type] + 1);
-    log(`專項訓練完成，${type} 能力上升！`, "訓練");
+    log(`訓練提升！${type} 能力 +1`, "訓練");
     saveGame();
     updateUI();
 }
 
 function rest() {
     player.stamina = Math.min(player.maxStamina, player.stamina + 50);
-    log("充分休息，體力恢復 50。", "休養");
+    log("休息恢復體力 +50", "休養");
     saveGame();
     updateUI();
 }
 
-function nextWeek() {
-    player.week++;
-    player.money += player.wage + player.sponsorWage;
-    if (player.week > 52) { player.week = 1; player.year++; player.age++; }
-    saveGame();
-    updateUI();
-}
-
-function playMatch() {
-    if (player.stamina < 30) { alert("體力過低！"); return; }
+// ⚔️ 核心天梯 Matchmaking 與 ELO 算法
+function findAndPlayMatch() {
+    if (player.stamina < 30) { alert("體力不足以進行天梯賽 (需 30 體力)！"); return; }
     player.stamina -= 30;
-    if (player.week === 25) {
-        player.money += 8000;
-        player.trophies.push("振賀邀請賽 冠軍");
-        log("🏆 奪得【振賀邀請賽】冠軍！獎金 $8000 入帳！", "邀請賽");
-    } else {
-        player.goals += 1;
-        log("聯賽表現優異，踢進 1 球！", "賽事");
-    }
-    nextWeek();
-}
 
-function postSocial() {
-    player.fans += 500;
-    log("發布社群動態，獲得 500 名粉絲！", "商業");
+    // 從所有本地用戶與預設庫中隨機挑選對手
+    let allUsers = JSON.parse(localStorage.getItem('fb_pvp_users') || '{}');
+    let pool = [...mockPlayers];
+    Object.keys(allUsers).forEach(u => {
+        if (u !== currentUser) pool.push(allUsers[u].saveData);
+    });
+
+    // 隨機抽取一位對手
+    let opponent = pool[Math.floor(Math.random() * pool.length)];
+
+    // 計算勝負概率 (基於 OVR 與些許隨機幸運值)
+    let myPower = getOVR(player) + (Math.random() * 20 - 10);
+    let oppPower = getOVR(opponent) + (Math.random() * 20 - 10);
+
+    let isWin = myPower >= oppPower;
+
+    // ELO 計算公式
+    let expected = 1 / (1 + Math.pow(10, (opponent.elo - player.elo) / 400));
+    let K = 32;
+    let eloChange = Math.round(K * ((isWin ? 1 : 0) - expected));
+
+    player.elo += eloChange;
+    if (isWin) player.wins++; else player.losses++;
+
+    let myGoals = isWin ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 2);
+    let oppGoals = isWin ? Math.max(0, myGoals - (Math.floor(Math.random() * 2) + 1)) : myGoals + Math.floor(Math.random() * 2) + 1;
+
+    let resStr = isWin ? `🟢 勝利 (${myGoals} - ${oppGoals})` : `🔴 敗北 (${myGoals} - ${oppGoals})`;
+    log(`${resStr} 對手：${opponent.name} (OVR:${getOVR(opponent)}) | 積分: ${eloChange >= 0 ? '+' : ''}${eloChange} (${player.elo})`, "天梯對戰");
+
+    alert(`對戰結束！\n【比數】${player.name} ${myGoals} : ${oppGoals} ${opponent.name}\n【結果】${isWin ? "獲得勝利！" : "不幸敗北"}\n【積分變動】${eloChange >= 0 ? '+' : ''}${eloChange} (目前: ${player.elo})`);
+
     saveGame();
     updateUI();
+    loadLeaderboard();
+}
+
+// 刷新排行榜
+function loadLeaderboard() {
+    let allUsers = JSON.parse(localStorage.getItem('fb_pvp_users') || '{}');
+    let rankList = [...mockPlayers];
+
+    Object.keys(allUsers).forEach(u => {
+        rankList.push(allUsers[u].saveData);
+    });
+
+    // 依 ELO 降冪排序
+    rankList.sort((a, b) => b.elo - a.elo);
+
+    let tbody = document.getElementById('leaderboard-body');
+    tbody.innerHTML = '';
+
+    rankList.slice(0, 10).forEach((p, idx) => {
+        let total = (p.wins + p.losses) || 1;
+        let winRate = Math.round((p.wins / total) * 100);
+        let tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight:bold; color:${idx === 0 ? 'var(--accent-gold)' : '#fff'};">#${idx + 1}</td>
+            <td>${p.name}</td>
+            <td>${p.nation}</td>
+            <td style="color:var(--accent-cyan); font-weight:bold;">${getOVR(p)}</td>
+            <td style="color:var(--accent-gold); font-weight:bold;">${p.elo}</td>
+            <td>${winRate}% (${p.wins}W)</td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 </script>
 </body>
