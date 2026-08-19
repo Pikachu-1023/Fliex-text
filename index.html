@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚽ 足球人生模擬器 6.0 | 全服天梯與職業聯賽版</title>
+    <title>⚽ 足球人生模擬器 7.0 | 小遊戲特訓與百人天梯版</title>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -39,13 +39,13 @@
             gap: 15px;
         }
 
-        /* 獨立頁面 - 登入 / 註冊 View */
         .page-view { display: none; }
         .page-view.active { display: block; }
 
+        /* 登入 / 註冊頁面 */
         .auth-container {
             max-width: 450px;
-            margin: 60px auto;
+            margin: 50px auto;
             background: var(--card-bg);
             border: 1px solid var(--card-border);
             border-radius: 16px;
@@ -64,14 +64,13 @@
 
         .auth-form { display: none; flex-direction: column; gap: 12px; text-align: left; }
         .auth-form.active { display: flex; }
-        .auth-form label { font-size: 13px; color: var(--text-sub); }
 
         .auth-input {
             width: 100%; padding: 12px; background: #0b0f19;
             border: 1px solid var(--card-border); color: #fff; border-radius: 8px; font-size: 14px;
         }
 
-        /* 主遊戲 UI */
+        /* 主介面 */
         .header-card {
             text-align: center; background: linear-gradient(135deg, #1e293b, #0f172a);
             border: 1px solid var(--card-border); border-radius: 16px; padding: 18px; position: relative;
@@ -107,9 +106,44 @@
         .btn-purple { background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; }
         .btn-rose { background: linear-gradient(135deg, #f43f5e, #be123c); color: #fff; }
 
-        table.rank-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        table.rank-table th, table.rank-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--card-border); }
-        table.rank-table th { color: var(--accent-cyan); background: #0b0f19; }
+        /* 🎮 訓練小遊戲容器樣式 */
+        .game-canvas-area {
+            background: #0b0f19;
+            border: 2px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-top: 15px;
+            position: relative;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 射門抓Timing小遊戲條 */
+        .timing-bar {
+            width: 100%; max-width: 400px; height: 30px; background: #1e293b;
+            border-radius: 15px; border: 2px solid var(--card-border);
+            position: relative; overflow: hidden; margin: 20px 0;
+        }
+        .target-zone {
+            position: absolute; left: 42.5%; width: 15%; height: 100%;
+            background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green);
+        }
+        .pointer {
+            position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+            background: #fff; box-shadow: 0 0 8px #fff;
+        }
+
+        /* 百人天梯表格滾動條 */
+        .rank-scroll-container {
+            max-height: 400px; overflow-y: auto; border: 1px solid var(--card-border); border-radius: 10px; margin-top: 15px;
+        }
+        table.rank-table { width: 100%; border-collapse: collapse; }
+        table.rank-table th, table.rank-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--card-border); font-size: 13px; }
+        table.rank-table th { color: var(--accent-cyan); background: #0b0f19; position: sticky; top: 0; z-index: 2; }
 
         #log-box {
             height: 220px; overflow-y: auto; background-color: #0b0f19; border: 1px solid var(--card-border);
@@ -117,10 +151,7 @@
         }
         .log-entry { margin-bottom: 8px; border-bottom: 1px solid #1a2436; padding-bottom: 6px; }
         .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-right: 6px; font-weight: bold; }
-        .bg-blue { background-color: #0284c7; }
-        .bg-gold { background-color: #d97706; color: black; }
         .bg-purple { background-color: #9333ea; }
-        .bg-rose { background-color: #e11d48; }
     </style>
 </head>
 <body>
@@ -130,52 +161,32 @@
     <!-- 獨立頁面：登入 / 註冊 -->
     <div id="view-auth" class="page-view active">
         <div class="auth-container">
-            <h2>⚽ 足球人生 6.0</h2>
-            <p style="color:var(--text-sub); font-size:14px;">建立角色並踏上職業與全服天梯之旅</p>
+            <h2>⚽ 足球人生 7.0</h2>
+            <p style="color:var(--text-sub); font-size:14px;">小遊戲互動特訓 & 100人全服天梯版</p>
 
             <div class="auth-nav">
                 <button class="auth-nav-btn active" onclick="switchAuthTab('login')">玩家登入</button>
                 <button class="auth-nav-btn" onclick="switchAuthTab('register')">創建新角色</button>
             </div>
 
-            <!-- 登入表單 -->
             <form id="form-login" class="auth-form active" onsubmit="event.preventDefault(); handleLogin();">
-                <div>
-                    <label>帳號</label>
-                    <input type="text" id="login-u" class="auth-input" required placeholder="請輸入帳號">
-                </div>
-                <div>
-                    <label>密碼</label>
-                    <input type="password" id="login-p" class="auth-input" required placeholder="請輸入密碼">
-                </div>
+                <input type="text" id="login-u" class="auth-input" required placeholder="帳號">
+                <input type="password" id="login-p" class="auth-input" required placeholder="密碼">
                 <button type="submit" class="action-btn btn-gold" style="margin-top:10px;">進入遊戲</button>
             </form>
 
-            <!-- 註冊表單 (獨立頁面內) -->
             <form id="form-register" class="auth-form" onsubmit="event.preventDefault(); handleRegister();">
-                <div>
-                    <label>帳號名稱</label>
-                    <input type="text" id="reg-u" class="auth-input" required placeholder="登入用帳號">
-                </div>
-                <div>
-                    <label>密碼</label>
-                    <input type="password" id="reg-p" class="auth-input" required placeholder="設定密碼">
-                </div>
-                <div>
-                    <label>球員姓名</label>
-                    <input type="text" id="reg-name" class="auth-input" required placeholder="例如：孫振鶴">
-                </div>
-                <div>
-                    <label>國籍</label>
-                    <select id="reg-nation" class="auth-input">
-                        <option value="台灣">台灣</option>
-                        <option value="巴西">巴西</option>
-                        <option value="英格蘭">英格蘭</option>
-                        <option value="西班牙">西班牙</option>
-                        <option value="日本">日本</option>
-                    </select>
-                </div>
-                <button type="submit" class="action-btn btn-purple" style="margin-top:10px;">完成創角並登入</button>
+                <input type="text" id="reg-u" class="auth-input" required placeholder="登入帳號">
+                <input type="password" id="reg-p" class="auth-input" required placeholder="設定密碼">
+                <input type="text" id="reg-name" class="auth-input" required placeholder="球員姓名 (如：孫振鶴)">
+                <select id="reg-nation" class="auth-input">
+                    <option value="台灣">台灣</option>
+                    <option value="巴西">巴西</option>
+                    <option value="英格蘭">英格蘭</option>
+                    <option value="西班牙">西班牙</option>
+                    <option value="日本">日本</option>
+                </select>
+                <button type="submit" class="action-btn btn-purple" style="margin-top:10px;">創建角色</button>
             </form>
         </div>
     </div>
@@ -183,16 +194,16 @@
     <!-- 獨立頁面：主遊戲 View -->
     <div id="view-game" class="page-view">
         <div class="header-card">
-            <h1>⚽ 足球人生模擬器 6.0 (五大聯賽 & 天梯版)</h1>
+            <h1>⚽ 足球人生模擬器 7.0 (百人天梯與小遊戲特訓)</h1>
             <div class="author-tag">🎮 登入玩家：<span id="hdr-account" style="color:#fff;">-</span> | 創作者：FIiex (孫振鶴)</div>
             <button onclick="handleLogout()" style="position:absolute; right:15px; top:15px; background:var(--accent-rose); border:none; color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer;">登出</button>
         </div>
 
         <div class="tab-bar">
             <button class="tab-btn active" onclick="switchTab(event, 'tab-profile')">👤 球員狀態</button>
-            <button class="tab-btn" onclick="switchTab(event, 'tab-train')">🏋️ 高難養成</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-train')">🎮 小遊戲養成</button>
             <button class="tab-btn" onclick="switchTab(event, 'tab-league')">🏆 聯賽與代表隊</button>
-            <button class="tab-btn" onclick="switchTab(event, 'tab-pvp')">⚔️ 全服天梯 (5段位)</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-pvp')">⚔️ 100人全服天梯</button>
             <button class="tab-btn" onclick="switchTab(event, 'tab-log')">📜 生涯日誌</button>
         </div>
 
@@ -235,17 +246,41 @@
             </div>
         </div>
 
-        <!-- 2. 豐富高難養成 -->
+        <!-- 2. 小遊戲互動養成 -->
         <div id="tab-train" class="tab-content">
-            <h3>🏋️ 訓練養成（能力越高進步越慢，疲勞過高易受傷）</h3>
-            <p style="color:var(--text-sub); font-size:13px; margin-bottom:10px;">注意：若受傷將無法參加聯賽與天梯！請妥善控制疲勞度。</p>
-            
-            <div class="btn-grid">
-                <button class="action-btn" onclick="train('shooting')">🎯 射門特訓 (-20體力, +15疲勞)</button>
-                <button class="action-btn" onclick="train('passing')">👟 傳球特訓 (-20體力, +15疲勞)</button>
-                <button class="action-btn" onclick="train('dribbling')">⚡ 盤帶特訓 (-20體力, +15疲勞)</button>
-                <button class="action-btn" onclick="train('physical')">💪 體能強化 (-25體力, +20疲勞)</button>
-                <button class="action-btn btn-purple" onclick="trainHeavy()">🔥 魔鬼地獄特訓 (全屬性有機會+1, 疲勞+40)</button>
+            <h3>🎮 互動式訓練小遊戲（選擇訓練項目）</h3>
+            <p style="color:var(--text-sub); font-size:13px;">透過操作訓練小遊戲，取得 Perfect 評價可獲得更高的屬性提升！(-20體力, +15疲勞)</p>
+
+            <div class="btn-grid" style="margin-bottom: 15px;">
+                <button class="action-btn btn-gold" onclick="startShootingGame()">🎯 射門 Timing 挑戰</button>
+                <button class="action-btn btn-purple" onclick="startDribbleGame()">⚡ 盤帶障礙反應挑戰</button>
+            </div>
+
+            <!-- 小遊戲視窗 -->
+            <div id="minigame-container" class="game-canvas-area" style="display:none;">
+                <h3 id="mg-title" style="color:var(--accent-cyan);">訓練準備中...</h3>
+                <p id="mg-desc" style="font-size:13px; color:var(--text-sub); margin-top:5px;"></p>
+
+                <!-- 射門遊戲 UI -->
+                <div id="mg-shoot-ui" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+                    <div class="timing-bar">
+                        <div class="target-zone"></div>
+                        <div id="mg-pointer" class="pointer"></div>
+                    </div>
+                    <button class="action-btn btn-rose" style="width:200px; font-size:18px;" onclick="shootClick()">起腳射門！</button>
+                </div>
+
+                <!-- 盤帶遊戲 UI -->
+                <div id="mg-dribble-ui" style="display:none; width:100%; flex-direction:column; align-items:center;">
+                    <div style="font-size: 32px; margin: 15px 0;" id="mg-arrow-display">⬆️</div>
+                    <p style="font-size:12px; color:var(--text-sub);">快點擊下方對應方向鍵避開障礙！</p>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="action-btn" onclick="dribbleInput('⬅️')">⬅️</button>
+                        <button class="action-btn" onclick="dribbleInput('⬆️')">⬆️</button>
+                        <button class="action-btn" onclick="dribbleInput('⬇️')">⬇️</button>
+                        <button class="action-btn" onclick="dribbleInput('➡️')">➡️</button>
+                    </div>
+                </div>
             </div>
 
             <hr style="border-color:var(--card-border); margin: 20px 0;">
@@ -253,51 +288,51 @@
             <div class="btn-grid">
                 <button class="action-btn" style="background-color:var(--accent-green); color:#000;" onclick="rest('light')">🧘 基礎休養 (+40體力, -20疲勞)</button>
                 <button class="action-btn btn-gold" onclick="rest('massage')">💆 聘請私人理療師 (-$200, +80體力, 疲勞清零)</button>
-                <button class="action-btn btn-rose" onclick="cureInjury()">🏥 深度醫療治療 (治療受傷, -$500)</button>
+                <button class="action-btn btn-rose" onclick="cureInjury()">🏥 深度醫療治療 (-$500)</button>
             </div>
         </div>
 
         <!-- 3. 五大聯賽與國家隊 -->
         <div id="tab-league" class="tab-content">
             <h3>🏆 職業聯賽試訓與對戰</h3>
-            <p style="color:var(--text-sub); font-size:13px; margin-bottom:12px;">當 OVR 達到標準可簽約更高層級聯賽：英超、西甲、義甲、德甲、法甲。</p>
             <div class="btn-grid">
-                <button class="action-btn" onclick="joinLeague('英超豪門', 75)">🏴󠁧󠁢󠁥󠁮󠁧󠁿 試訓英超 (需求 OVR 75)</button>
-                <button class="action-btn" onclick="joinLeague('西甲勁旅', 70)">🇪🇸 試訓西甲 (需求 OVR 70)</button>
-                <button class="action-btn" onclick="joinLeague('義甲強權', 65)">🇮🇹 試訓義甲 (需求 OVR 65)</button>
-                <button class="action-btn" onclick="joinLeague('德甲霸主', 60)">🇩🇪 試訓德甲 (需求 OVR 60)</button>
-                <button class="action-btn" onclick="joinLeague('法甲勁旅', 55)">🇫🇷 試訓法甲 (需求 OVR 55)</button>
+                <button class="action-btn" onclick="joinLeague('英超豪門', 75)">🏴󠁧󠁢󠁥󠁮󠁧󠁿 試訓英超 (OVR 75)</button>
+                <button class="action-btn" onclick="joinLeague('西甲勁旅', 70)">🇪🇸 試訓西甲 (OVR 70)</button>
+                <button class="action-btn" onclick="joinLeague('義甲強權', 65)">🇮🇹 試訓義甲 (OVR 65)</button>
+                <button class="action-btn" onclick="joinLeague('德甲霸主', 60)">🇩🇪 試訓德甲 (OVR 60)</button>
+                <button class="action-btn" onclick="joinLeague('法甲勁旅', 55)">🇫🇷 試訓法甲 (OVR 55)</button>
             </div>
-            <button class="action-btn btn-gold" style="width:100%; margin-top:15px;" onclick="playLeagueMatch()">⚽ 踢一場職業聯賽賽事 (賺取獎金與經驗)</button>
+            <button class="action-btn btn-gold" style="width:100%; margin-top:15px;" onclick="playLeagueMatch()">⚽ 踢一場聯賽賽事 (賺取獎金與經驗)</button>
 
             <hr style="border-color:var(--card-border); margin: 20px 0;">
             <h3>🇹🇼 國家代表隊征戰</h3>
-            <p style="color:var(--text-sub); font-size:13px; margin-bottom:10px;">代表國家隊征戰國際盃賽！(需求 OVR 70 以上)</p>
             <button class="action-btn btn-purple" style="width:100%;" onclick="playNationalMatch()">🌍 出戰世界盃資格賽 (-40體力)</button>
         </div>
 
-        <!-- 4. 全服天梯排名賽 (5段位 + 4假人 + 榜首 zhen he) -->
+        <!-- 4. 全服天梯排名賽 (100 位假人 + 榜首 zhen he) -->
         <div id="tab-pvp" class="tab-content">
-            <h3>⚔️ 全服天梯 (分為 5 個段位)</h3>
-            <p style="color:var(--text-sub); font-size:13px;">包含 5 大階級：青銅 ➔ 白銀 ➔ 黃金 ➔ 鑽石 ➔ 王者。</p>
-            <button class="action-btn btn-gold" style="width:100%; font-size:16px; margin: 10px 0;" onclick="playRankedMatch()">🔍 匹配天梯對手並展開對戰 (-30體力)</button>
+            <h3>⚔️ 全服天梯 (100 位選手生態系)</h3>
+            <p style="color:var(--text-sub); font-size:13px;">實力均勻分佈於青銅至王者 5 大段位。</p>
+            <button class="action-btn btn-gold" style="width:100%; font-size:16px; margin: 10px 0;" onclick="playRankedMatch()">🔍 匹配天梯對手 (-30體力)</button>
 
             <hr style="border-color:var(--card-border); margin: 15px 0;">
-            <h3>🏆 全服英雄天梯榜 (Top Leaderboard)</h3>
-            <table class="rank-table">
-                <thead>
-                    <tr>
-                        <th>排名</th>
-                        <th>玩家/球員</th>
-                        <th>國籍</th>
-                        <th>段位</th>
-                        <th>OVR</th>
-                        <th>ELO 積分</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboard-body">
-                </tbody>
-            </table>
+            <h3>🏆 100 人天梯排行榜</h3>
+            <div class="rank-scroll-container">
+                <table class="rank-table">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>球員</th>
+                            <th>國籍</th>
+                            <th>段位</th>
+                            <th>OVR</th>
+                            <th>ELO 積分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- 5. 歷史日誌 -->
@@ -310,18 +345,9 @@
 </div>
 
 <script>
-// 核心資料結構
 let currentUser = null;
 let player = null;
-
-// 4 位固定假人 + 榜首 zhen he
-const predefinedBots = [
-    { name: "zhen he", nation: "台灣", ovr: 95, elo: 2100, isBot: true },
-    { name: "影子攻擊手", nation: "日本", ovr: 78, elo: 1450, isBot: true },
-    { name: "狂暴中場", nation: "英格蘭", ovr: 72, elo: 1280, isBot: true },
-    { name: "鋼鐵後衛", nation: "義大利", ovr: 65, elo: 1120, isBot: true },
-    { name: "菜鳥門將", nation: "台灣", ovr: 55, elo: 920, isBot: true }
-];
+let botPlayersPool = [];
 
 function createNewPlayerData(name, nation) {
     return {
@@ -336,7 +362,37 @@ function createNewPlayerData(name, nation) {
     };
 }
 
-// 5 段位劃分邏輯
+// 自動生成 100 個平均分佈於 5 個段位的假人
+function generate100Bots() {
+    const surnames = ["陳", "林", "黃", "張", "李", "王", "吳", "劉", "蔡", "楊", "Smith", "Silva", "Müller", "Kim", "Sato"];
+    const names = ["冠宇", "宗翰", "家豪", "建宏", "偉婷", "Alex", "Lucas", "Leo", "Ken", "Yuki"];
+    const nations = ["台灣", "日本", "巴西", "英格蘭", "西班牙", "德國", "法國", "阿根廷"];
+
+    let bots = [];
+
+    // 榜首固定為 zhen he
+    bots.push({ name: "zhen he", nation: "台灣", ovr: 96, elo: 2200, isBot: true });
+
+    // 生成 99 個假人，均勻分佈在 ELO 800 ~ 1900 之間
+    for (let i = 0; i < 99; i++) {
+        let name = surnames[Math.floor(Math.random() * surnames.length)] + names[Math.floor(Math.random() * names.length)];
+        let nation = nations[Math.floor(Math.random() * nations.length)];
+        
+        // 分佈算法：讓 ELO 均勻散佈在不同區間
+        let baseElo = 800 + Math.floor((i / 99) * 1100) + Math.floor(Math.random() * 20);
+        let calculatedOvr = Math.floor(45 + (baseElo - 800) / 25);
+
+        bots.push({
+            name: name,
+            nation: nation,
+            ovr: calculatedOvr,
+            elo: baseElo,
+            isBot: true
+        });
+    }
+    return bots;
+}
+
 function getRankTierInfo(elo) {
     if (elo >= 1800) return { name: "👑 傳奇王者", color: "var(--accent-gold)" };
     if (elo >= 1500) return { name: "💎 璀璨鑽石", color: "var(--accent-purple)" };
@@ -364,11 +420,11 @@ function handleRegister() {
     let nation = document.getElementById('reg-nation').value;
 
     let users = JSON.parse(localStorage.getItem('fb_sim_users') || '{}');
-    if (users[u]) { alert("此帳號已被註冊！"); return; }
+    if (users[u]) { alert("帳號已存在！"); return; }
 
     users[u] = { password: p, saveData: createNewPlayerData(name, nation) };
     localStorage.setItem('fb_sim_users', JSON.stringify(users));
-    alert("創建成功！已為您自動登入。");
+    alert("創建成功！已登入。");
     loginSuccess(u, users[u].saveData);
 }
 
@@ -386,10 +442,11 @@ function handleLogin() {
 function loginSuccess(u, saveData) {
     currentUser = u;
     player = saveData;
+    botPlayersPool = generate100Bots();
     document.getElementById('hdr-account').textContent = currentUser;
     document.getElementById('view-auth').classList.remove('active');
     document.getElementById('view-game').classList.add('active');
-    log("成功進入遊戲，開展職業足球之旅！", "系統");
+    log("進入遊戲，百人天梯伺服器載入完成！", "系統");
     updateUI();
     renderLeaderboard();
 }
@@ -419,7 +476,7 @@ function log(msg, type = "消息") {
 function renderLogs() {
     const box = document.getElementById('log-box');
     box.innerHTML = '';
-    player.logs.slice(0, 25).forEach(l => {
+    player.logs.slice(0, 20).forEach(l => {
         const div = document.createElement('div');
         div.className = 'log-entry';
         div.innerHTML = `<span class="badge bg-purple">${l.type}</span>[${l.time}] ${l.msg}`;
@@ -456,11 +513,7 @@ function updateUI() {
     document.getElementById('bar-fatigue').style.width = `${player.fatigue}%`;
 
     let injEl = document.getElementById('p-injury-status');
-    if (player.isInjured) {
-        injEl.textContent = "🚨 目前處於受傷狀態，無法參加比賽！請前往治療。";
-    } else {
-        injEl.textContent = "";
-    }
+    injEl.textContent = player.isInjured ? "🚨 處於受傷狀態，無法參加賽事與訓練！" : "";
 
     const attrs = ['shooting', 'passing', 'dribbling', 'physical'];
     const ids = ['shoot', 'pass', 'dribble', 'physical'];
@@ -479,185 +532,193 @@ function switchTab(evt, tabId) {
     document.getElementById(tabId).classList.add('active');
 }
 
-// 豐富高難養成機制（含邊際效應與受傷風險）
-function train(type) {
-    if (player.isInjured) { alert("你目前受傷中，請先治療！"); return; }
-    if (player.stamina < 20) { alert("體力不足！"); return; }
+// ----------------------------------------------------
+// 🎮 訓練小遊戲邏輯 (Shooting & Dribble)
+// ----------------------------------------------------
+let timingInterval = null;
+let pointerPos = 0;
+let pointerDir = 2;
 
+function checkCostAndInjury() {
+    if (player.isInjured) { alert("受傷中，請先治療！"); return false; }
+    if (player.stamina < 20) { alert("體力不足 (-20體力)！"); return false; }
     player.stamina -= 20;
     player.fatigue = Math.min(100, player.fatigue + 15);
 
-    // 受傷判定 (疲勞越高受傷機率越高)
-    let injuryRisk = player.fatigue * 0.4; // 疲勞 100% 時有 40% 機率受傷
-    if (Math.random() * 100 < injuryRisk) {
+    if (Math.random() * 100 < player.fatigue * 0.35) {
         player.isInjured = true;
-        log(`🚑 訓練強度過高導致肌肉拉傷！進入受傷狀態。`, "受傷");
-        alert("受傷了！請前往休息頁面治療。");
-        saveGame(); updateUI(); return;
+        log(`🚑 訓練強度過高導致肌肉拉傷！`, "受傷");
+        alert("受傷了！請前往醫療。");
+        saveGame(); updateUI(); return false;
     }
+    return true;
+}
 
-    // 難度遞增邏輯 (能力越高越難提升)
-    let currentVal = player[type];
-    let successRate = currentVal > 80 ? 0.4 : (currentVal > 70 ? 0.7 : 0.95);
+// 小遊戲 1：射門 Timing
+function startShootingGame() {
+    if (!checkCostAndInjury()) return;
 
-    if (Math.random() <= successRate) {
-        player[type] = Math.min(99, player[type] + 1);
-        log(`🎯 特訓成功！${type} 能力提升至 ${player[type]}`, "訓練");
+    document.getElementById('minigame-container').style.display = 'flex';
+    document.getElementById('mg-shoot-ui').style.display = 'flex';
+    document.getElementById('mg-dribble-ui').style.display = 'none';
+    document.getElementById('mg-title').textContent = "🎯 射門特訓：抓準綠色完美區域！";
+    document.getElementById('mg-desc').textContent = "當白色指標移動到綠色區域中央時按下射門！";
+
+    pointerPos = 0;
+    pointerDir = 3;
+    clearInterval(timingInterval);
+    timingInterval = setInterval(() => {
+        pointerPos += pointerDir;
+        if (pointerPos >= 95 || pointerPos <= 0) pointerDir *= -1;
+        document.getElementById('mg-pointer').style.left = `${pointerPos}%`;
+    }, 20);
+}
+
+function shootClick() {
+    clearInterval(timingInterval);
+    let resultGrade = "MISS";
+    let inc = 0;
+
+    if (pointerPos >= 43 && pointerPos <= 57) {
+        resultGrade = "🌟 PERFECT!!";
+        inc = 2;
+    } else if (pointerPos >= 35 && pointerPos <= 65) {
+        resultGrade = "👍 GREAT!";
+        inc = 1;
     } else {
-        log(`❌ 特訓遇到了瓶頸，本次訓練未取得突破。`, "訓練");
+        resultGrade = "❌ MISS...";
+        inc = 0;
     }
 
+    player.shooting = Math.min(99, player.shooting + inc);
+    log(`🎯 射門小遊戲結果：${resultGrade} | 射門屬性 +${inc}`, "小遊戲");
+    alert(`射門結果：${resultGrade}\n射門能力 +${inc}`);
+
+    document.getElementById('minigame-container').style.display = 'none';
     saveGame(); updateUI();
 }
 
-function trainHeavy() {
-    if (player.isInjured) { alert("受傷中！"); return; }
-    if (player.stamina < 35) { alert("體力不足！"); return; }
+// 小遊戲 2：盤帶反應
+let targetArrow = "";
+function startDribbleGame() {
+    if (!checkCostAndInjury()) return;
 
-    player.stamina -= 35;
-    player.fatigue = Math.min(100, player.fatigue + 40);
+    document.getElementById('minigame-container').style.display = 'flex';
+    document.getElementById('mg-shoot-ui').style.display = 'none';
+    document.getElementById('mg-dribble-ui').style.display = 'flex';
+    document.getElementById('mg-title').textContent = "⚡ 盤帶特訓：快速按對方向標誌！";
 
-    if (Math.random() * 100 < player.fatigue * 0.6) {
-        player.isInjured = true;
-        log(`🚑 魔鬼訓練導致重傷！`, "受傷");
-        alert("重傷！請盡速治療。");
-        saveGame(); updateUI(); return;
+    const arrows = ['⬅️', '⬆️', '⬇️', '➡️'];
+    targetArrow = arrows[Math.floor(Math.random() * arrows.length)];
+    document.getElementById('mg-arrow-display').textContent = targetArrow;
+}
+
+function dribbleInput(input) {
+    let inc = 0;
+    let res = "";
+    if (input === targetArrow) {
+        res = "⚡ 成功閃避障礙！";
+        inc = 1;
+        player.dribbling = Math.min(99, player.dribbling + 1);
+    } else {
+        res = "💥 絆到障礙物！";
     }
 
-    ['shooting', 'passing', 'dribbling', 'physical'].forEach(st => {
-        if (Math.random() < 0.5) player[st] = Math.min(99, player[st] + 1);
-    });
-    log(`🔥 完成魔鬼地獄特訓！綜合實力大幅波動上升。`, "地獄特訓");
+    log(`⚡ 盤帶小遊戲結果：${res} | 盤帶屬性 +${inc}`, "小遊戲");
+    alert(`結果：${res}\n盤帶能力 +${inc}`);
+
+    document.getElementById('minigame-container').style.display = 'none';
     saveGame(); updateUI();
 }
 
+// 恢復與醫療
 function rest(mode) {
     if (mode === 'light') {
         player.stamina = Math.min(player.maxStamina, player.stamina + 40);
         player.fatigue = Math.max(0, player.fatigue - 20);
-        log("🧘 完成基礎休養，恢復體力並降低疲勞。", "休養");
+        log("🧘 完成休養，恢復體力並降低疲勞。", "休養");
     } else if (mode === 'massage') {
         if (player.money < 200) { alert("資金不足 $200！"); return; }
         player.money -= 200;
-        player.stamina = player.maxStamina;
-        player.fatigue = 0;
-        log("💆 聘請私人理療師，體力全滿且疲勞完全消除！", "理療");
+        player.stamina = player.maxStamina; player.fatigue = 0;
+        log("💆 聘請私人理療師，狀態全滿！", "理療");
     }
     saveGame(); updateUI();
 }
 
 function cureInjury() {
-    if (!player.isInjured) { alert("你目前非常健康！"); return; }
+    if (!player.isInjured) { alert("健康狀況良好！"); return; }
     if (player.money < 500) { alert("醫療費需要 $500！"); return; }
-    player.money -= 500;
-    player.isInjured = false;
-    log("🏥 經過權威醫生治療，傷勢完全康復！", "醫療");
+    player.money -= 500; player.isInjured = false;
+    log("🏥 經過治療，傷勢完全康復！", "醫療");
     saveGame(); updateUI();
 }
 
-// 聯賽與國家隊系統
+// 聯賽與國家隊
 function joinLeague(leagueName, reqOvr) {
-    if (getOVR() < reqOvr) {
-        alert(`OVR 未達到 ${reqOvr}，無法通過 ${leagueName} 的試訓！`); return;
-    }
-    player.club = leagueName;
-    log(`🎉 成功簽約加入 ${leagueName}！`, "球會");
+    if (getOVR() < reqOvr) { alert(`OVR 未達 ${reqOvr}，試訓失敗！`); return; }
+    player.club = leagueName; log(`🎉 成功加盟 ${leagueName}！`, "球會");
     saveGame(); updateUI();
 }
 
 function playLeagueMatch() {
-    if (player.isInjured) { alert("受傷中無法參賽！"); return; }
-    if (player.stamina < 25) { alert("體力不足以參加賽事！"); return; }
-
-    player.stamina -= 25;
-    player.fatigue = Math.min(100, player.fatigue + 10);
-
+    if (player.isInjured || player.stamina < 25) { alert("狀態不佳或體力不足！"); return; }
+    player.stamina -= 25; player.fatigue = Math.min(100, player.fatigue + 10);
     let isWin = Math.random() < (getOVR() / 100);
     let reward = isWin ? 300 : 100;
     player.money += reward;
-
-    log(`⚽ 聯賽比賽結束：${isWin ? "勝利" : "戰平/敗北"}！獲得獎金 $${reward}`, "聯賽");
+    log(`⚽ 聯賽比賽：${isWin ? "獲勝" : "戰平/敗北"}，獲獎金 $${reward}`, "聯賽");
     saveGame(); updateUI();
 }
 
 function playNationalMatch() {
-    if (getOVR() < 70) { alert("國家隊召集門檻需要 OVR 達到 70！"); return; }
-    if (player.isInjured) { alert("受傷中無法參賽！"); return; }
-    if (player.stamina < 40) { alert("體力不足！"); return; }
-
-    player.nationalTeam = `${player.nation}國家代表隊`;
-    player.stamina -= 40;
-
+    if (getOVR() < 70) { alert("門檻需要 OVR 70！"); return; }
+    if (player.isInjured || player.stamina < 40) { alert("無法參賽！"); return; }
+    player.nationalTeam = `${player.nation}代表隊`; player.stamina -= 40;
     let isWin = Math.random() < (getOVR() / 95);
     let reward = isWin ? 600 : 200;
     player.money += reward;
-
-    log(`🌍 代表 ${player.nation} 出戰國際賽：${isWin ? "狂勝對手" : "惜敗"}！獲得國家獎金 $${reward}`, "代表隊");
+    log(`🌍 國際賽結果：${isWin ? "獲勝" : "惜敗"}，國家獎金 $${reward}`, "代表隊");
     saveGame(); updateUI();
 }
 
-// 全服天梯 Matchmaking (包含榜首 zhen he 與 4 位假人)
+// 全服天梯對戰
 function playRankedMatch() {
-    if (player.isInjured) { alert("受傷中無法進行天梯對戰！"); return; }
-    if (player.stamina < 30) { alert("體力不足！"); return; }
+    if (player.isInjured || player.stamina < 30) { alert("無法參賽！"); return; }
+    player.stamina -= 30; player.fatigue = Math.min(100, player.fatigue + 15);
 
-    player.stamina -= 30;
-    player.fatigue = Math.min(100, player.fatigue + 15);
-
-    // 建立對手池
-    let pool = [...predefinedBots];
-    let users = JSON.parse(localStorage.getItem('fb_sim_users') || '{}');
-    Object.keys(users).forEach(u => {
-        if (u !== currentUser) {
-            let p = users[u].saveData;
-            pool.push({ name: p.name, nation: p.nation, ovr: Math.floor((p.shooting+p.passing+p.dribbling+p.physical)/4), elo: p.elo, isBot: false });
-        }
-    });
-
-    let opponent = pool[Math.floor(Math.random() * pool.length)];
+    let opponent = botPlayersPool[Math.floor(Math.random() * botPlayersPool.length)];
 
     let myChance = getOVR() + (Math.random() * 20 - 10);
     let oppChance = opponent.ovr + (Math.random() * 20 - 10);
     let isWin = myChance >= oppChance;
 
-    // ELO 計算
     let expected = 1 / (1 + Math.pow(10, (opponent.elo - player.elo) / 400));
-    let K = 32;
-    let eloChange = Math.round(K * ((isWin ? 1 : 0) - expected));
+    let eloChange = Math.round(32 * ((isWin ? 1 : 0) - expected));
 
     player.elo += eloChange;
     if (isWin) player.wins++; else player.losses++;
 
-    log(`⚔️ 天梯對戰：${isWin ? "勝利" : "敗北"} 對手 ${opponent.name} (ELO:${opponent.elo}) | 積分 ${eloChange >= 0 ? '+' : ''}${eloChange}`, "天梯");
-    alert(`對戰結果：${isWin ? "獲得勝利！" : "不敵對方"}\n對手：${opponent.name}\n積分變動：${eloChange >= 0 ? '+' : ''}${eloChange} (目前 ELO: ${player.elo})`);
+    log(`⚔️ 天梯對戰 ${isWin ? "勝利" : "敗北"}！對手：${opponent.name} | 積分 ${eloChange >= 0 ? '+' : ''}${eloChange}`, "天梯");
+    alert(`對戰對手：${opponent.name}\n結果：${isWin ? "勝利！" : "敗北"}\n積分變動：${eloChange >= 0 ? '+' : ''}${eloChange}`);
 
     saveGame(); updateUI(); renderLeaderboard();
 }
 
 function renderLeaderboard() {
-    let pool = [...predefinedBots];
-    let users = JSON.parse(localStorage.getItem('fb_sim_users') || '{}');
-
+    let pool = [...botPlayersPool];
     if (player) {
         pool.push({ name: player.name, nation: player.nation, ovr: getOVR(), elo: player.elo, isCurrent: true });
     }
 
-    Object.keys(users).forEach(u => {
-        if (u !== currentUser) {
-            let p = users[u].saveData;
-            pool.push({ name: p.name, nation: p.nation, ovr: Math.floor((p.shooting+p.passing+p.dribbling+p.physical)/4), elo: p.elo });
-        }
-    });
-
-    // 確保 zhen he 永遠保持最高的 ELO (榜首)
+    // 確保 zhen he 永遠第一
     pool.forEach(p => {
         if (p.name === "zhen he") {
             let maxOther = Math.max(...pool.filter(x => x.name !== "zhen he").map(x => x.elo));
-            if (p.elo <= maxOther) p.elo = maxOther + 100;
+            if (p.elo <= maxOther) p.elo = maxOther + 50;
         }
     });
 
-    // 排序
     pool.sort((a, b) => b.elo - a.elo);
 
     let tbody = document.getElementById('leaderboard-body');
@@ -666,7 +727,7 @@ function renderLeaderboard() {
     pool.forEach((p, idx) => {
         let tier = getRankTierInfo(p.elo);
         let tr = document.createElement('tr');
-        if (p.isCurrent) tr.style.background = "rgba(56, 189, 248, 0.1)";
+        if (p.isCurrent) tr.style.background = "rgba(56, 189, 248, 0.15)";
         tr.innerHTML = `
             <td style="font-weight:bold; color:${idx === 0 ? 'var(--accent-gold)' : '#fff'};">#${idx + 1}</td>
             <td style="font-weight:bold; ${p.name === 'zhen he' ? 'color:var(--accent-gold)' : ''}">${p.name} ${p.isCurrent ? '(你)' : ''}</td>
