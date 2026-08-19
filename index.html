@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚽ 足球人生模擬器 2.0 | FIiex(孫振賀)製作</title>
+    <title>⚽ 足球人生模擬器 3.0 | FIiex(孫振賀)製作</title>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -12,6 +12,7 @@
             --accent-hover: #059669;
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
+            --gold: #fbbf24;
         }
 
         body {
@@ -26,76 +27,81 @@
 
         .container {
             width: 100%;
-            max-width: 850px;
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 20px;
-        }
-
-        @media (min-width: 640px) {
-            .container {
-                grid-template-columns: 320px 1fr;
-            }
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
 
         .header-card {
-            grid-column: 1 / -1;
             text-align: center;
             background-color: var(--card-bg);
             border-radius: 12px;
-            padding: 15px 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             border-bottom: 3px solid #38bdf8;
         }
 
-        .card {
+        h1 { margin: 0; font-size: 22px; color: #38bdf8; }
+        .author-tag { font-size: 13px; color: var(--gold); font-weight: bold; margin-top: 4px; }
+
+        /* 分頁標籤列 */
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--text-sub);
+            border: 1px solid #334155;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border-color: #38bdf8;
+        }
+
+        /* 分頁內容 */
+        .tab-content {
+            display: none;
             background-color: var(--card-bg);
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
-        h1 { margin: 0; font-size: 24px; color: #38bdf8; }
-        h2, h3 { margin-top: 0; color: #38bdf8; }
-        
-        .author-tag {
-            margin-top: 5px;
-            font-size: 14px;
-            color: #fbbf24;
-            font-weight: bold;
+        .tab-content.active { display: block; }
+
+        /* 網格 layout */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 15px;
         }
 
-        .stat-group { margin-bottom: 12px; }
-
-        .stat-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background-color: #334155;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background-color: var(--accent);
-            transition: width 0.3s ease;
-        }
+        .stat-group { margin-bottom: 10px; }
+        .stat-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; }
+        .progress-bar { width: 100%; height: 8px; background-color: #334155; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background-color: var(--accent); transition: width 0.3s; }
 
         .btn-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 10px;
-            margin-bottom: 15px;
+            margin-top: 10px;
         }
 
-        button {
+        button.action-btn {
             background-color: #334155;
             color: white;
             border: none;
@@ -106,127 +112,156 @@
             transition: all 0.2s;
         }
 
-        button:hover:not(:disabled) {
+        button.action-btn:hover {
             background-color: var(--accent);
             transform: translateY(-2px);
         }
 
-        .btn-match {
-            grid-column: span 2;
-            background-color: #eab308;
-            color: #000;
-        }
+        .btn-gold { background-color: #eab308; color: #000; }
+        .btn-gold:hover { background-color: #ca8a04; }
+        .btn-purple { background-color: #8b5cf6; }
+        .btn-purple:hover { background-color: #7c3aed; }
+        .btn-pink { background-color: #ec4899; }
+        .btn-pink:hover { background-color: #db2777; }
 
-        .btn-match:hover { background-color: #ca8a04; }
-
-        .btn-coach {
-            background-color: #ec4899;
-            color: white;
-        }
-
-        .btn-coach:hover { background-color: #db2777; }
-
+        /* 日誌盒 */
         #log-box {
-            height: 280px;
+            height: 250px;
             overflow-y: auto;
             background-color: #0f172a;
             border-radius: 8px;
             padding: 12px;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.6;
             display: flex;
             flex-direction: column-reverse;
         }
 
-        .log-entry {
-            margin-bottom: 8px;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 4px;
-        }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #1e293b; padding-bottom: 4px; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 5px; font-weight: bold; }
+        .bg-blue { background-color: #0284c7; }
+        .bg-gold { background-color: #d97706; color: black; }
+        .bg-red { background-color: #dc2626; }
+        .bg-green { background-color: #16a34a; }
 
-        .badge {
+        .trophy-badge {
             display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            background-color: #0284c7;
-            margin-right: 5px;
+            background-color: #334155;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin: 4px;
+            font-size: 13px;
         }
-
-        .badge-national { background-color: #ef4444; }
-        .badge-coach { background-color: #ec4899; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header-card">
-        <h1>⚽ 足球人生模擬器 2.0：球王巨星</h1>
+        <h1>⚽ 足球人生模擬器 3.0：傳奇巨星</h1>
         <div class="author-tag">🎮 遊戲製作：FIiex (孫振賀)</div>
-    </div>
-
-    <!-- 左側：角色狀態面板 -->
-    <div class="card">
-        <h2 id="player-name">⚽ 載入中...</h2>
-        <div style="font-size: 14px; color: var(--text-sub); margin-bottom: 15px;">
-            <span id="player-nation">國籍</span> | <span id="player-age">16</span> 歲<br>
-            球隊：<span id="player-club" style="color:#fbbf24; font-weight:bold;">青訓小球隊</span><br>
-            國家隊：<span id="player-national" style="color:#ef4444; font-weight:bold;">無</span>
-        </div>
-
-        <div class="stat-group">
-            <div class="stat-label"><span>體力 (Energy)</span><span id="stamina-val">100/100</span></div>
-            <div class="progress-bar"><div id="stamina-bar" class="progress-fill" style="width: 100%;"></div></div>
-        </div>
-
-        <div class="stat-group">
-            <div class="stat-label"><span>射門 (Shooting)</span><span id="stat-shoot">50</span></div>
-            <div class="progress-bar"><div id="shoot-bar" class="progress-fill" style="width: 50%;"></div></div>
-        </div>
-
-        <div class="stat-group">
-            <div class="stat-label"><span>傳球 (Passing)</span><span id="stat-pass">50</span></div>
-            <div class="progress-bar"><div id="pass-bar" class="progress-fill" style="width: 50%;"></div></div>
-        </div>
-
-        <div class="stat-group">
-            <div class="stat-label"><span>盤帶 (Dribbling)</span><span id="stat-dribble">50</span></div>
-            <div class="progress-bar"><div id="dribble-bar" class="progress-fill" style="width: 50%;"></div></div>
-        </div>
-
-        <hr style="border-color: #334155; margin: 15px 0;">
-
-        <div style="font-size: 14px;">
-            <p>生涯進球：<span id="total-goals" style="color: #eab308; font-weight:bold;">0</span> 球</p>
-            <p>國家隊出場/進球：<span id="national-stats">0/0</span></p>
-            <p>週薪收入：$<span id="player-wage">50</span></p>
-            <p>存款：$<span id="player-money" style="color:#10b981; font-weight:bold;">100</span></p>
-            <p>週數：第 <span id="game-week" style="color: #38bdf8;">1</span> 週</p>
+        <div style="font-size: 13px; margin-top: 8px; color: var(--text-sub);">
+            第 <span id="hdr-year" style="color:#38bdf8;">1</span> 年 | 第 <span id="hdr-week" style="color:#38bdf8;">1</span> 週 | 階段：<span id="hdr-phase" style="color:var(--gold); font-weight:bold;">季前賽</span>
         </div>
     </div>
 
-    <!-- 右側：操作選單 -->
-    <div>
-        <div class="card" style="margin-bottom: 20px;">
-            <h3>每周行動選單</h3>
-            <div class="btn-grid">
-                <button onclick="actionTrain('shoot')">🎯 射門訓練 (-20體)</button>
-                <button onclick="actionTrain('pass')">👟 傳球訓練 (-20體)</button>
-                <button onclick="actionTrain('dribble')">⚡ 盤帶訓練 (-20體)</button>
-                <button onclick="actionRest()">🛌 休養恢復 (+50體)</button>
-                <button class="btn-match" onclick="actionMatch()">🔥 參加週末聯賽 (-30體)</button>
+    <!-- 導覽分頁按鈕 -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('tab-profile')">👤 球員主頁</button>
+        <button class="tab-btn" onclick="switchTab('tab-train')">🏋️ 訓練與教練</button>
+        <button class="tab-btn" onclick="switchTab('tab-match')">⚽ 賽事日程</button>
+        <button class="tab-btn" onclick="switchTab('tab-awards')">🏆 獎牌與榮譽</button>
+        <button class="tab-btn" onclick="switchTab('tab-transfer')">💼 轉會市場</button>
+        <button class="tab-btn" onclick="switchTab('tab-log')">📜 生涯日誌</button>
+    </div>
+
+    <!-- 分頁 1：球員主頁 -->
+    <div id="tab-profile" class="tab-content active">
+        <div class="grid-2">
+            <div>
+                <h2 id="p-name" style="margin-0; color:#38bdf8;">球員名稱</h2>
+                <p style="font-size: 14px; color:var(--text-sub);">
+                    國籍：<span id="p-nation">台灣</span> | 年齡：<span id="p-age">16</span> 歲<br>
+                    效力球隊：<span id="p-club" style="color:var(--gold); font-weight:bold;">青訓小球隊</span><br>
+                    國家隊：<span id="p-national" style="color:#ef4444; font-weight:bold;">未徵召</span>
+                </p>
+                <div class="stat-group">
+                    <div class="stat-label"><span>體力 (Energy)</span><span id="val-stamina">100/100</span></div>
+                    <div class="progress-bar"><div id="bar-stamina" class="progress-fill" style="width:100%;"></div></div>
+                </div>
             </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <button class="btn-coach" onclick="hirePrivateCoach()">🏋️ 請私人教練 ($500)</button>
-                <button style="background-color: #8b5cf6;" onclick="checkTransfers()">💼 查看轉會合約</button>
+            <div>
+                <p>💰 週薪：$<span id="p-wage">100</span> | 存款：$<span id="p-money" style="color:#10b981; font-weight:bold;">200</span></p>
+                <p>⚽ 生涯總進球：<span id="p-goals" style="color:var(--gold); font-weight:bold;">0</span> 顆</p>
+                <p>🧢 國家隊出場/進球：<span id="p-national-stats">0 / 0</span></p>
+                <p>📊 綜合戰力 (OVR)：<span id="p-ovr" style="font-weight:bold; font-size:18px; color:#38bdf8;">50</span></p>
             </div>
+        </div>
+        <hr style="border-color:#334155; margin: 15px 0;">
+        <h3>能力細項</h3>
+        <div class="grid-2">
+            <div class="stat-group"><div class="stat-label"><span>🎯 射門</span><span id="s-shoot">50</span></div><div class="progress-bar"><div id="b-shoot" class="progress-fill" style="width:50%;"></div></div></div>
+            <div class="stat-group"><div class="stat-label"><span>👟 傳球</span><span id="s-pass">50</span></div><div class="progress-bar"><div id="b-pass" class="progress-fill" style="width:50%;"></div></div></div>
+            <div class="stat-group"><div class="stat-label"><span>⚡ 盤帶</span><span id="s-dribble">50</span></div><div class="progress-bar"><div id="b-dribble" class="progress-fill" style="width:50%;"></div></div></div>
+            <div class="stat-group"><div class="stat-label"><span>🗣️ 頭頂</span><span id="s-header">50</span></div><div class="progress-bar"><div id="b-header" class="progress-fill" style="width:50%;"></div></div></div>
+            <div class="stat-group"><div class="stat-label"><span>🎨 控球</span><span id="s-control">50</span></div><div class="progress-bar"><div id="b-control" class="progress-fill" style="width:50%;"></div></div></div>
+            <div class="stat-group"><div class="stat-label"><span>💪 體能</span><span id="s-physical">50</span></div><div class="progress-bar"><div id="b-physical" class="progress-fill" style="width:50%;"></div></div></div>
+        </div>
+    </div>
+
+    <!-- 分頁 2：訓練與教練 -->
+    <div id="tab-train" class="tab-content">
+        <h3>自主專項訓練 (-20 體力)</h3>
+        <div class="btn-grid">
+            <button class="action-btn" onclick="train('shooting')">🎯 射門特訓</button>
+            <button class="action-btn" onclick="train('passing')">👟 傳球特訓</button>
+            <button class="action-btn" onclick="train('dribbling')">⚡ 盤帶特訓</button>
+            <button class="action-btn" onclick="train('heading')">🗣️ 頭頂特訓</button>
+            <button class="action-btn" onclick="train('ballControl')">🎨 控球特訓</button>
+            <button class="action-btn" onclick="train('physical')">💪 體能強化</button>
         </div>
 
-        <div class="card">
-            <h3>生涯事件紀錄</h3>
-            <div id="log-box"></div>
+        <hr style="border-color:#334155; margin: 20px 0;">
+        <h3>私人教練與團隊</h3>
+        <div class="btn-grid">
+            <button class="action-btn btn-pink" onclick="hireCoach()">🏋️ 聘請私人教練 ($500)</button>
+            <button class="action-btn btn-purple" onclick="talkToManager()">🗣️ 與總教練談話</button>
+            <button class="action-btn" style="background-color:#10b981;" onclick="rest()">🛌 休養恢復 (+50體力)</button>
         </div>
+    </div>
+
+    <!-- 分頁 3：賽事與日程 -->
+    <div id="tab-match" class="tab-content">
+        <h3>當前日程事件</h3>
+        <p id="schedule-desc" style="font-size:15px; color:var(--gold);">目前為季前準備期，請積極訓練提升能力！</p>
+        
+        <div class="btn-grid">
+            <button id="btn-play-match" class="action-btn btn-gold" onclick="playMatch()">⚽ 參加週末比賽 (-30體力)</button>
+            <button class="action-btn" style="background-color:#0284c7;" onclick="nextWeek()">⏭️ 推進至下一週</button>
+        </div>
+    </div>
+
+    <!-- 分頁 4：獎牌與榮譽 -->
+    <div id="tab-awards" class="tab-content">
+        <h3>🏆 榮譽陳列室</h3>
+        <div id="trophy-list">
+            <p style="color:var(--text-sub);">尚未獲得任何獎牌或榮譽。</p>
+        </div>
+    </div>
+
+    <!-- 分頁 5：轉會市場 -->
+    <div id="tab-transfer" class="tab-content">
+        <h3>💼 球會轉會與合約邀請</h3>
+        <p style="font-size:14px; color:var(--text-sub);">當你的能力值提升後，五大聯賽及頂級豪門會為你發來合約。</p>
+        <button class="action-btn btn-purple" onclick="checkTransfers()">🔍 搜尋轉會報價</button>
+    </div>
+
+    <!-- 分頁 6：生涯日誌 -->
+    <div id="tab-log" class="tab-content">
+        <h3>📜 職業生涯重大紀錄</h3>
+        <div id="log-box"></div>
     </div>
 </div>
 
@@ -235,233 +270,273 @@ let player = {
     name: "孫振賀",
     nation: "台灣",
     age: 16,
+    year: 1,
     week: 1,
+    phase: "季前賽",
     stamina: 100,
     maxStamina: 100,
+    // 6 大能力
     shooting: 50,
     passing: 50,
     dribbling: 50,
+    heading: 50,
+    ballControl: 50,
+    physical: 50,
+    // 球會與薪水
     club: "地區業餘青訓隊",
-    league: "業餘",
     wage: 100,
     money: 200,
     goals: 0,
+    seasonGoals: 0,
+    // 國家隊
     nationalTeam: "無",
     nationalCaps: 0,
-    nationalGoals: 0
+    nationalGoals: 0,
+    // 獎項
+    trophies: []
 };
 
-// 五大聯賽與豪門球隊資料庫
+// 五大聯賽球隊資料
 const clubs = [
-    { name: "地區丙級聯賽隊", league: "丙級", req: 55, wage: 300 },
-    { name: "乙級聯賽隊", league: "乙級", req: 65, wage: 1000 },
-    // 法甲
-    { name: "里昂 (法甲)", league: "法甲", req: 75, wage: 3500 },
-    { name: "巴黎聖日耳曼 (法甲)", league: "法甲", req: 88, wage: 25000 },
-    // 德甲
-    { name: "多特蒙德 (德甲)", league: "德甲", req: 80, wage: 8000 },
-    { name: "拜仁慕尼黑 (德甲)", league: "德甲", req: 90, wage: 30000 },
-    // 義甲
-    { name: "AC米蘭 (義甲)", league: "義甲", req: 82, wage: 10000 },
-    { name: "國際米蘭 (義甲)", league: "義甲", req: 86, wage: 18000 },
-    // 西甲
-    { name: "馬德里競技 (西甲)", league: "西甲", req: 84, wage: 15000 },
-    { name: "巴塞隆納 (西甲)", league: "西甲", req: 92, wage: 40000 },
-    { name: "皇家馬德里 (西甲)", league: "西甲", req: 94, wage: 50000 },
-    // 英超
-    { name: "熱刺 (英超)", league: "英超", req: 83, wage: 12000 },
-    { name: "阿森納 (英超)", league: "英超", req: 87, wage: 20000 },
-    { name: "利物浦 (英超)", league: "英超", req: 89, wage: 28000 },
-    { name: "曼城 (英超)", league: "英超", req: 95, wage: 60000 }
+    { name: "地區丙級隊", req: 55, wage: 300 },
+    { name: "乙級聯賽隊", req: 65, wage: 1000 },
+    { name: "里昂 (法甲)", req: 75, wage: 3500 },
+    { name: "多特蒙德 (德甲)", req: 80, wage: 8000 },
+    { name: "AC米蘭 (義甲)", req: 83, wage: 12000 },
+    { name: "阿森納 (英超)", req: 87, wage: 22000 },
+    { name: "皇家馬德里 (西甲)", req: 92, wage: 45000 },
+    { name: "曼城 (英超)", req: 95, wage: 65000 }
 ];
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(ct => ct.classList.remove('active'));
+    
+    event.target.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+}
 
 function log(msg, type = "消息") {
     const logBox = document.getElementById('log-box');
     const div = document.createElement('div');
     div.className = 'log-entry';
-    let badgeClass = "badge";
-    if (type === "國家隊") badgeClass += " badge-national";
-    if (type === "特訓") badgeClass += " badge-coach";
-    div.innerHTML = `<span class="${badgeClass}">${type}</span>第 ${player.week} 週：${msg}`;
+    let badgeClass = "bg-blue";
+    if (type === "賽事") badgeClass = "bg-gold";
+    if (type === "國家隊" || type === "挑戰賽") badgeClass = "bg-red";
+    if (type === "榮譽") badgeClass = "bg-green";
+
+    div.innerHTML = `<span class="badge ${badgeClass}">${type}</span>第 ${player.year} 年 W${player.week}：${msg}`;
     logBox.prepend(div);
 }
 
-function initPlayer() {
-    let pName = prompt("請輸入你的球員姓名：", "孫振賀");
-    let pNation = prompt("請輸入你的國籍：", "台灣");
-    if (pName) player.name = pName;
-    if (pNation) player.nation = pNation;
-    
-    document.getElementById('player-name').textContent = `⚽ ${player.name}`;
-    document.getElementById('player-nation').textContent = player.nation;
-    log(`你開啟了職業生涯，天賦異稟的 ${player.name} (${player.nation}) 準備征服世界足壇！`);
-    updateUI();
+function getOVR() {
+    return Math.floor((player.shooting + player.passing + player.dribbling + player.heading + player.ballControl + player.physical) / 6);
 }
 
 function updateUI() {
-    document.getElementById('player-age').textContent = player.age;
-    document.getElementById('player-club').textContent = player.club;
-    document.getElementById('player-national').textContent = player.nationalTeam;
-    document.getElementById('game-week').textContent = player.week;
-    document.getElementById('total-goals').textContent = player.goals;
-    document.getElementById('national-stats').textContent = `${player.nationalCaps}/${player.nationalGoals}`;
-    document.getElementById('player-wage').textContent = player.wage;
-    document.getElementById('player-money').textContent = player.money;
+    // 標頭
+    document.getElementById('hdr-year').textContent = player.year;
+    document.getElementById('hdr-week').textContent = player.week;
+    document.getElementById('hdr-phase').textContent = player.phase;
 
-    document.getElementById('stamina-val').textContent = `${player.stamina}/${player.maxStamina}`;
-    document.getElementById('stamina-bar').style.width = `${(player.stamina / player.maxStamina) * 100}%`;
+    // 主頁
+    document.getElementById('p-name').textContent = `⚽ ${player.name}`;
+    document.getElementById('p-nation').textContent = player.nation;
+    document.getElementById('p-age').textContent = player.age;
+    document.getElementById('p-club').textContent = player.club;
+    document.getElementById('p-national').textContent = player.nationalTeam;
+    document.getElementById('p-wage').textContent = player.wage;
+    document.getElementById('p-money').textContent = player.money;
+    document.getElementById('p-goals').textContent = player.goals;
+    document.getElementById('p-national-stats').textContent = `${player.nationalCaps} / ${player.nationalGoals}`;
+    document.getElementById('p-ovr').textContent = getOVR();
 
-    document.getElementById('stat-shoot').textContent = player.shooting;
-    document.getElementById('shoot-bar').style.width = `${player.shooting}%`;
+    // 體力條
+    document.getElementById('val-stamina').textContent = `${player.stamina}/${player.maxStamina}`;
+    document.getElementById('bar-stamina').style.width = `${(player.stamina/player.maxStamina)*100}%`;
 
-    document.getElementById('stat-pass').textContent = player.passing;
-    document.getElementById('pass-bar').style.width = `${player.passing}%`;
+    // 6 大能力
+    const stats = ['shooting', 'passing', 'dribbling', 'heading', 'ballControl', 'physical'];
+    const ids = ['shoot', 'pass', 'dribble', 'header', 'control', 'physical'];
+    stats.forEach((st, idx) => {
+        document.getElementById(`s-${ids[idx]}`).textContent = player[st];
+        document.getElementById(`b-${ids[idx]}`).style.width = `${player[st]}%`;
+    });
 
-    document.getElementById('stat-dribble').textContent = player.dribbling;
-    document.getElementById('dribble-bar').style.width = `${player.dribbling}%`;
+    // 榮譽列表
+    const tBox = document.getElementById('trophy-list');
+    if (player.trophies.length > 0) {
+        tBox.innerHTML = player.trophies.map(t => `<span class="trophy-badge">🏆 ${t}</span>`).join('');
+    }
+
+    // 日程描述
+    const desc = document.getElementById('schedule-desc');
+    if (player.week === 25) {
+        desc.textContent = "🔥 本週特別賽事：【振賀挑戰賽】隆重登場！贏得比賽將獲得鉅額獎金與特別榮譽！";
+    } else if (player.week >= 43 && player.week <= 48 && player.year % 4 === 0) {
+        desc.textContent = "🌍 本週國際盛會：【世界盃 / 洲際盃賽】正火熱開打中！";
+    } else if (player.phase === "季前賽") {
+        desc.textContent = "🏋️ 季前準備期（第 1~8 週）：適合高強度自主訓練與請教練特訓！";
+    } else if (player.phase === "例行賽") {
+        desc.textContent = "⚽ 正式賽季進行中（第 9~42 週）：全力投入週末賽事爭奪聯賽冠軍！";
+    } else {
+        desc.textContent = "🛌 季後休賽期（第 49~52 週）：領取年度結算獎項，充分調養體力。";
+    }
 }
 
-function getOverall() {
-    return Math.floor((player.shooting + player.passing + player.dribbling) / 3);
+function initPlayer() {
+    let pName = prompt("請輸入球員姓名：", "孫振賀");
+    let pNation = prompt("請輸入球員國籍：", "台灣");
+    if (pName) player.name = pName;
+    if (pNation) player.nation = pNation;
+    log(`職業生涯啟航！${player.name} (${player.nation}) 踏上了成為球王的傳奇之路！`);
+    updateUI();
+}
+
+function train(type) {
+    if (player.stamina < 20) { alert("體力不足！請先休養恢復。"); return; }
+    player.stamina -= 20;
+
+    let gain = Math.floor(Math.random() * 2) + 1;
+    if (player[type] < 99) {
+        player[type] = Math.min(99, player[type] + gain);
+        log(`完成了專項訓練，能力 +${gain}！`, "訓練");
+    }
+    updateUI();
+}
+
+function hireCoach() {
+    if (player.money < 500) { alert("存款不足 $500！"); return; }
+    player.money -= 500;
+
+    ['shooting','passing','dribbling','heading','ballControl','physical'].forEach(st => {
+        player[st] = Math.min(99, player[st] + Math.floor(Math.random() * 2) + 1);
+    });
+
+    log("聘請私人高級教練進行全方位爆發特訓！所有能力提升！", "特訓");
+    updateUI();
+}
+
+function talkToManager() {
+    let ovr = getOVR();
+    let msg = "";
+    if (ovr < 60) msg = "「年輕人，你的基礎還不夠紮實，多留在訓練場練習吧！」";
+    else if (ovr < 75) msg = "「表現不錯，你已經是球隊不可或缺的輪換球員了！」";
+    else if (ovr < 88) msg = "「你是我們的核心主力！帶領球隊拿下勝利吧！」";
+    else msg = "「你是世界級頂尖巨星，這座球場由你主宰！」";
+
+    alert(`👔 總教練對你說：\n\n${msg}`);
+    log(`與總教練進行談話談心。`, "教練");
+}
+
+function rest() {
+    player.stamina = Math.min(player.maxStamina, player.stamina + 50);
+    log("進行充份休養，體力大幅度恢復。", "休養");
+    updateUI();
 }
 
 function nextWeek() {
     player.week++;
     player.money += player.wage;
-    
-    // 生日與年齡升級
-    if (player.week % 52 === 0) {
+
+    // 賽季階段轉換 (52週/年)
+    if (player.week <= 8) player.phase = "季前賽";
+    else if (player.week <= 42) player.phase = "例行賽";
+    else if (player.week <= 48) player.phase = "國際賽/大賽期";
+    else player.phase = "休賽季";
+
+    // 跨年結算
+    if (player.week > 52) {
+        player.week = 1;
+        player.year++;
         player.age++;
-        log(`🎂 祝你 ${player.age} 歲生日快樂！新賽季加油！`, "生日");
+        player.phase = "季前賽";
+        log(`🎂 賽季結束！進入第 ${player.year} 年，祝你 ${player.age} 歲生日快樂！`, "賽季");
+        checkAnnualAwards();
     }
 
-    // 檢查國家隊徵召
-    checkNationalTeam();
+    checkNationalCallUp();
     updateUI();
 }
 
-function actionTrain(type) {
-    if (player.stamina < 20) {
-        alert("體力不足！請先休息。");
-        return;
-    }
-    player.stamina -= 20;
-
-    let gain = Math.floor(Math.random() * 2) + 1;
-    if (type === 'shoot' && player.shooting < 99) {
-        player.shooting = Math.min(99, player.shooting + gain);
-        log(`完成射門訓練，射門 +${gain}！`, "訓練");
-    } else if (type === 'pass' && player.passing < 99) {
-        player.passing = Math.min(99, player.passing + gain);
-        log(`完成傳球訓練，傳球 +${gain}！`, "訓練");
-    } else if (type === 'dribble' && player.dribbling < 99) {
-        player.dribbling = Math.min(99, player.dribbling + gain);
-        log(`完成盤帶訓練，盤帶 +${gain}！`, "訓練");
-    }
-    
-    nextWeek();
-}
-
-function hirePrivateCoach() {
-    const cost = 500;
-    if (player.money < cost) {
-        alert(`存款不足！僱用私人教練需要 $${cost}`);
-        return;
-    }
-    player.money -= cost;
-    
-    // 提升所有能力 2~4 點
-    let gShoot = Math.floor(Math.random() * 3) + 2;
-    let gPass = Math.floor(Math.random() * 3) + 2;
-    let gDribble = Math.floor(Math.random() * 3) + 2;
-
-    player.shooting = Math.min(99, player.shooting + gShoot);
-    player.passing = Math.min(99, player.passing + gPass);
-    player.dribbling = Math.min(99, player.dribbling + gDribble);
-
-    log(`🏋️ 花費 $${cost} 請頂級私人教練一對一特訓！全屬性大幅提升！(射門+${gShoot}, 傳球+${gPass}, 盤帶+${gDribble})`, "特訓");
-    updateUI();
-}
-
-function actionRest() {
-    player.stamina = Math.min(player.maxStamina, player.stamina + 50);
-    log(`在家充分休養，體力大幅恢復。`, "休養");
-    nextWeek();
-}
-
-function actionMatch() {
-    if (player.stamina < 30) {
-        alert("體力過低，總教練讓你板凳休戰！請先休息。");
-        return;
-    }
+function playMatch() {
+    if (player.stamina < 30) { alert("體力不足 30，無法維持高強度比賽！"); return; }
     player.stamina -= 30;
 
-    let ovr = getOverall();
-    let chance = Math.random() * 100;
+    let ovr = getOVR();
 
-    if (chance < ovr * 0.85) {
-        let scored = Math.floor(Math.random() * 2) + 1;
-        player.goals += scored;
-        log(`🔥 你在聯賽賽場破門得分！本場進球 ${scored} 顆，獲選單場 MVP！`, "比賽");
-    } else if (chance < 80) {
-        log(`你在比賽中串聯進攻，表現稱職，隊伍順利拿下比賽。`, "比賽");
-    } else {
-        log(`今天遭到對方嚴密防守，發揮受限，遺憾吞敗。`, "比賽");
+    // 特殊：第25週 振賀挑戰賽
+    if (player.week === 25) {
+        if (Math.random() * 100 < ovr) {
+            player.money += 5000;
+            if (!player.trophies.includes("振賀挑戰賽 冠軍")) player.trophies.push("振賀挑戰賽 冠軍");
+            log(`🏆 在【振賀挑戰賽】中展現王者姿態，率隊奪冠並抱走 $5000 獎金！`, "挑戰賽");
+        } else {
+            log(`在【振賀挑戰賽】決賽中遺憾落敗，獲得亞軍。`, "挑戰賽");
+        }
+    } 
+    // 常規比賽
+    else {
+        if (Math.random() * 100 < ovr * 0.8) {
+            let scored = Math.floor(Math.random() * 2) + 1;
+            player.goals += scored;
+            player.seasonGoals += scored;
+            log(`🔥 比賽發揮出色，個人踢進 ${scored} 球，獲得 MVP！`, "賽事");
+        } else {
+            log(`在比賽中完成防守與串聯傳球，幫助球隊穩固陣腳。`, "賽事");
+        }
     }
 
     nextWeek();
 }
 
-function checkNationalTeam() {
-    let ovr = getOverall();
-    // 國家隊階梯徵召
+function checkNationalCallUp() {
+    let ovr = getOVR();
     if (ovr >= 65 && player.nationalTeam === "無") {
         player.nationalTeam = `${player.nation} U19青年隊`;
-        alert(`🎉 恭喜！你收到【${player.nationalTeam}】的徵召通知！`);
-        log(`收到 ${player.nationalTeam} 正式徵召！`, "國家隊");
+        alert(`🎉 恭喜！收到【${player.nationalTeam}】的召集令！`);
+        log(`獲選入 ${player.nationalTeam} 名單！`, "國家隊");
     } else if (ovr >= 78 && player.nationalTeam.includes("U19")) {
         player.nationalTeam = `${player.nation} U23國奧隊`;
-        alert(`🎉 升級！你被晉升至【${player.nationalTeam}】！`);
+        alert(`🎉 晉升！你被升格入選【${player.nationalTeam}】！`);
         log(`升格至 ${player.nationalTeam}！`, "國家隊");
     } else if (ovr >= 88 && player.nationalTeam.includes("U23")) {
         player.nationalTeam = `${player.nation} 國家一隊`;
-        alert(`🏆 榮耀時刻！你正式入選【${player.nationalTeam}】世界盃陣容！`);
-        log(`入選 ${player.nationalTeam}！挑戰世界之巔！`, "國家隊");
+        alert(`🏆 榮耀！正式召集進入【${player.nationalTeam}】大名單！`);
+        log(`進入 ${player.nationalTeam} 世界盃先發陣容！`, "國家隊");
     }
+}
 
-    // 偶爾觸發國家隊賽事
-    if (player.nationalTeam !== "無" && Math.random() < 0.25) {
-        player.nationalCaps++;
-        if (Math.random() * 100 < ovr) {
-            player.nationalGoals++;
-            player.money += 2000;
-            log(`代表 ${player.nationalTeam} 出賽並踢進 1 粒關鍵進球！獲得國家隊獎金 $2000！`, "國家隊");
-        } else {
-            log(`代表 ${player.nationalTeam} 先發登場完成國際賽。`, "國家隊");
-        }
+function checkAnnualAwards() {
+    if (player.seasonGoals >= 25) {
+        player.trophies.push(`第 ${player.year-1} 年 聯賽金靴獎`);
+        log(`🥇 憑藉單季 ${player.seasonGoals} 顆進球，勇奪「聯賽金靴獎」！`, "榮譽");
     }
+    if (getOVR() >= 90 && !player.trophies.includes("歐洲金球獎 (Ballon d'Or)")) {
+        player.trophies.push("歐洲金球獎 (Ballon d'Or)");
+        log(`👑 加冕足壇最高榮譽——「歐洲金球獎」！正式登頂世界球王！`, "榮譽");
+    }
+    player.seasonGoals = 0; // 重置單季進球
 }
 
 function checkTransfers() {
-    let ovr = getOverall();
+    let ovr = getOVR();
     let availableClubs = clubs.filter(c => ovr >= c.req && player.club !== c.name);
 
     if (availableClubs.length > 0) {
-        let bestClub = availableClubs[availableClubs.length - 1]; // 選擇可加盟的最強球隊
-        let confirmTransfer = confirm(`🎉 收到來自【${bestClub.name}】的轉會邀請！\n\n聯賽：${bestClub.league}\n週薪：$${bestClub.wage} (原：$${player.wage})\n\n是否同意簽約加盟？`);
-        if (confirmTransfer) {
+        let bestClub = availableClubs[availableClubs.length - 1];
+        let choice = confirm(`🎉 豪門球隊【${bestClub.name}】向你發起轉會邀請！\n\n新週薪：$${bestClub.wage} (目前：$${player.wage})\n是否同意簽約？`);
+        if (choice) {
             player.club = bestClub.name;
-            player.league = bestClub.league;
             player.wage = bestClub.wage;
-            log(`✍️ 轟動足壇！你正式加盟 ${player.club}，進入 ${player.league}！週薪提升至 $${player.wage}！`, "轉會");
+            log(`✍️ 轟動足壇！成功轉會至豪門【${player.club}】，週薪升至 $${player.wage}！`, "轉會");
             updateUI();
         }
     } else {
-        alert(`當前綜合能力值 (OVR)：${ovr}\n目前沒有更高級別的豪門向你提出報價，繼續鍛鍊吧！`);
+        alert(`當前 OVR 為 ${ovr}，暫無更高等級的轉會報價！`);
     }
 }
 
-// 遊戲初始化
 initPlayer();
 </script>
 </body>
